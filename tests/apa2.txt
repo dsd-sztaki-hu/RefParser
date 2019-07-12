@@ -1,0 +1,29 @@
+Kacsuk, P., Kovacs, J., Farkas, Z., Marosi, A. C., Gombas, G., & Balaton, Z. (2009). SZTAKI desktop grid (SZDG): a flexible and scalable desktop grid system. Journal of Grid Computing, 7(4), 439.
+Balaton, Z., Gombás, G., Kacsuk, P., Kornafeld, A., Kovács, J., Marosi, A. C., ... & Kiss, T. (2007, March). Sztaki desktop grid: a modular and scalable way of building large computing grids. In 2007 IEEE International Parallel and Distributed Processing Symposium (pp. 1-8). IEEE.
+Daróczy, B., Pethes, R., & Benczúr, A. A. (2011, September). SZTAKI@ ImageCLEF 2011. In CLEF (Notebook Papers/Labs/Workshop).
+Marosi, A., Gombas, G., Balaton, Z., Kacsuk, P., & Kiss, T. (2008). Sztaki desktop grid: Building a scalable, secure platform for desktop grid computing. In Making grids work (pp. 365-376). Springer, Boston, MA.
+Kemény, Z., Beregi, R. J., Erdős, G., & Nacsa, J. (2016). The MTA SZTAKI Smart Factory: platform for research and project-oriented skill development in higher education. Procedia CIRP, 54, 53-58.
+Kacsuk, P., Marosi, A. C., Kovács, J., Balaton, Z., Gombás, G., Vida, G., & Kornafeld, A. (2006). Sztaki desktop grid: A hierarchical desktop grid system. In Cracow'06 Grid Workshop.
+Marosi, A. C., Balaton, Z., Kacsuk, P., & Drotos, D. (2010). SZTAKI desktop Grid: adapting clusters for desktop Grids. In Remote instrumentation and virtual laboratories (pp. 133-144). Springer, Boston, MA.
+Kemény, Z., Nacsa, J., Erdős, G., Glawar, R., Sihn, W., Monostori, L., & Ilie-Zudor, E. (2016). Complementary research and education opportunities—a comparison of learning factory facilities and methodologies at TU Wien and MTA SZTAKI. Procedia CIRP, 54, 47-52.
+Daróczy, B. Z., Siklósi, D., & Benczúr, A. (2012). Sztaki@ imageclef 2012 photo annotation. In Working Notes of the ImageCLEF 2011 Workshop at CLEF 2012 Conference (pp. 1-6). kn.
+Roska, T., Kék, L., Nemes, L., Zarándy, Á., Brendel, M., & Szolgay, P. (1998). CNN software library (Templates and algorithms.) Version 7.2. CNN software library (Templates and algorithms.) Version 7.2., 152.
+Augusztinovics, M., Gál, R., Máté, L., Simonovits, A., & Stahl, J. (2002). The Hungarian pension system before and after the 1998 reform. Pension reform in Central and Eastern Europe. Vol. I., 25-93.
+Varady, T., & Martin, R. (2002). Reverse engineering. Handbook of computer aided geometric design, 651-681.
+Kék, L., Karacs, K., & Roska, T. (2007). Cellular wave computing library (templates, algorithms, and programs). Version 2.1. Research report of Cellular Sensory and Wave Computing Laboratory CSW-1-2007.
+Gould, R. J., Jacobson, M. S., & Lehel, J. (1999). Potentially G-grafical degree sequences. Combinatorics, graph theory, and algorithms. Vol. 2., 451-460.
+Luspay, T., Péni, T., Gőzse, I., Szabó, Z., & Vanek, B. (2018). Model reduction for LPV systems based on approximate modal decomposition. International Journal for Numerical Methods in Engineering, 113(6), 891-909.
+Friedl, K., Ivanyos, G., Magniez, F., Santha, M., & Sen, P. (2003, June). Hidden translation and orbit coset in quantum computing. In Proceedings of the thirty-fifth annual ACM symposium on Theory of computing (pp. 1-9). ACM.
+Roska, T., & Rodriguez-Vazquez, A. (2000). Towards the visual microprocessor. VLSI design and the use of cellular neural network universal machines. Towards the visual microprocessor. VLSI design and the use of cellular neural network universal machines., 381.
+Németh, S. Z. (1999). Monotone vector fields. PUBLICATIONES MATHEMATICAE-DEBRECEN, 54(3-4), 437-449.
+Csuhaj-Varjú, E., Kelemen, J., Kelemenová, A., & Paun, G. (1994). Eco (grammar) systems. A preview.
+Meier, M., Seidelmann, J., & Mezgár, I. (2010). ManuCloud: the next-generation manufacturing as a service environment. ERCIM News, (83), 33-34.
+Artusi, A., Banterle, F., & Chetverikov, D. (2011, December). A survey of specularity removal methods. In Computer Graphics Forum (Vol. 30, No. 8, pp. 2208-2230). Oxford, UK: Blackwell Publishing Ltd.
+Juhász, Z., Kacsuk, P., & Kranzlmuller, D. (Eds.). (2004). Distributed and Parallel Systems: cluster and grid computing (Vol. 777). Springer Science & Business Media.
+Wong, K. M., Chong, A., Gedeon, T. D., Kóczy, L. T., & Vámos, T. (2003). Hierarchical fuzzy signature structure of complex structured data.
+Tuza, Z. (1994). Applications of the set-pair method in extremal hypergraph theory.
+Kertesz, A., Kecskemeti, G., & Brandic, I. (2009, June). An SLA-based resource virtualization approach for on-demand service provision. In Proceedings of the 3rd international workshop on Virtualization technologies in distributed computing (pp. 27-34). ACM.
+Roska, T., & Kek, L. (1994). Analogic CNN program library. Version 6.0. Analogic CNN program library. Version 6.0., 84.
+Benczur, A. A., Csalogany, K., Sarlos, T., & Uher, M. (2005, May). Spamrank–fully automatic link spam detection work in progress. In Proceedings of the first international workshop on adversarial information retrieval on the web (pp. 1-14).
+Várlaki, P., & Nádai, L. (2009). Background control and number archetype in perspective of the pauli-jung correspondence.
+Varga, L. Z., & Sztaki, Á. H. (2005). Semantic Web Services Description Based on Web Services Description. In W3C Workshop on Frameworks for Semantics in Web Services.
