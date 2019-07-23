@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+// A structure meant to hold a deserialized date or range of dates as arrays.
 class CSLDateStruct {
 
     @SerializedName("date-parts")

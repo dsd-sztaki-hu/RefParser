@@ -4,38 +4,39 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/// Converts an APA reference into an ArrayList of Tokens.
 public class Tokenizer {
 
-    private ArrayList<Pair> Regexes = new ArrayList<Pair>();
+    private  ArrayList<Pair> Regexes = new ArrayList<Pair>();
     private String text;
 
     public Tokenizer(String text) {
+        if (text == null)
+            text = "";
+
         Regexes.add(new Pair(Pattern.compile("^\\s+"), Token.TokenType.WhSpace));
         Regexes.add(new Pair(Pattern.compile("^,"), Token.TokenType.Comma));
-        Regexes.add(new Pair(Pattern.compile("^\\."), Token.TokenType.FullStop));
+        Regexes.add(new Pair(Pattern.compile("^\\.{3}"), Token.TokenType.TripleDots));
+        Regexes.add(new Pair(Pattern.compile("^\\."), Token.TokenType.Dot));
+        Regexes.add(new Pair(Pattern.compile("^\\?"), Token.TokenType.QuestionMark));
+        Regexes.add(new Pair(Pattern.compile("^!"), Token.TokenType.ExclaMark));
+        Regexes.add(new Pair(Pattern.compile("^&"), Token.TokenType.And));
         Regexes.add(new Pair(Pattern.compile("^\\("), Token.TokenType.LBracket));
         Regexes.add(new Pair(Pattern.compile("^\\)"), Token.TokenType.RBracket));
         Regexes.add(new Pair(Pattern.compile("^-"), Token.TokenType.Hyphen));
         Regexes.add(new Pair(Pattern.compile("^:"), Token.TokenType.Colon));
-        Regexes.add(new Pair(Pattern.compile("^(0|[1-9][0-9]*)"), Token.TokenType.Integer));
-        Regexes.add(new Pair(Pattern.compile("^[^,.:()\\s]+"), Token.TokenType.Word));
+        Regexes.add(new Pair(Pattern.compile("^[\\/]"), Token.TokenType.Slash));
+        Regexes.add(new Pair(Pattern.compile("^10\\.\\d{4,9}/[^\\s]+"), Token.TokenType.DOI));
+        Regexes.add(new Pair(Pattern.compile("^[0-9]+"), Token.TokenType.Integer)); // Includes invalid integers.
+        Regexes.add(new Pair(Pattern.compile("^[^,.:()?!&\\s]+"), Token.TokenType.Word));
+        
         this.text = text;
     }
 
     public ArrayList<Token> tokenize() {
         ArrayList<Token> list = new ArrayList<Token>();
-        Token prev = new Token(Token.TokenType.Unknown, "");
-        while (text.length() > 0) {
-            Token next = getNextToken();
-            if (next != null) {
-                if (next.type == Token.TokenType.WhSpace && prev.type == Token.TokenType.WhSpace)
-                    continue;
-                list.add(next);
-                prev = next;
-            } else if (text.length() != 0) {
-                throw new RuntimeException("Text length was not 0 after token: "+prev);
-            }
-        }
+        while (!text.isEmpty())
+            list.add(getNextToken());
         return list;
     }
 

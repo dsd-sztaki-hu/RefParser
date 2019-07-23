@@ -1,5 +1,6 @@
 package hu.sztaki.dsd.refparser;
 
+/// Encapsulates an object with meta-information about it.
 public class ParsingResult<T> {
 
     T result;

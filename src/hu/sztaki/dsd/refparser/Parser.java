@@ -5,13 +5,44 @@ import hu.sztaki.dsd.refparser.Token.TokenType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 public class Parser {
+
+    private enum AuthorsMode {
+        AtLeastOne, MoreThanOne, JustOne
+    };
+
+    private static ArrayList<Function<Boolean, ParsingResult<Reference>>> parserFunctions;
 
     private ArrayList<Token> input;
     private int index = 0;
 
     public Parser(ArrayList<Token> input) {
+        parserFunctions = new ArrayList<Function<Boolean, ParsingResult<Reference>>>(7);
+
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceArticle(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceBook(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceChapter(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferencePatent(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceStandard(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceThesis(s);
+        });
+        parserFunctions.add((Boolean s) -> {
+            return getReferenceWebsite(s);
+        });
+
         this.input = input;
     }
 
@@ -20,11 +51,38 @@ public class Parser {
         return index < input.size() ? input.get(index) : new Token();
     }
 
+    /// Returns the next N non-whitespace Tokens from the input without advancing
+    /// the
+    /// index. It seriously violates the LL(1) principles.
+    private ArrayList<Token> peekAhead(int count) {
+        ArrayList<Token> tokens = new ArrayList<Token>(count);
+        int prevIndex = index, i = 0;
+        while (canRead() && i < count) {
+            if (peekNext().type != TokenType.WhSpace) {
+                tokens.add(getNext());
+                i++;
+            } else // Simply ignore whitespaces.
+                getNext();
+        }
+        index = prevIndex;
+        return tokens;
+    }
+
     private Token getNext() {
         Token next = peekNext();
         // if (next.type != TokenType.Unknown) index++;
         index++;
         return next;
+    }
+
+    /// Ignores the next N non-whitespace Tokens.
+    private void ignoreAhead(int count) {
+        int i = 0;
+        while (canRead() && i < count) {
+            if (peekNext().type != TokenType.WhSpace)
+                i++;
+            getNext();
+        }
     }
 
     private boolean canRead() {
@@ -35,126 +93,162 @@ public class Parser {
         while (peekNext().type == Token.TokenType.WhSpace) // An 'if' would be enough in this revision.
             getNext();
     }
+
+    private void ignoreDot() {
+        if (peekNext().type == Token.TokenType.Dot)
+            getNext();
+    }
     // endregion
 
     // region Main parsers
     /// Parses the input string with a specialized LL(1) parser, and returns the
     /// first best match.
-    public Reference getReference() {
-        ArrayList<ParsingResult<Reference>> references = new ArrayList<ParsingResult<Reference>>(6);
+    public Reference getReference(ParsingMode mode) {
+        if (mode == ParsingMode.Automatic) {
+            ArrayList<ParsingResult<Reference>> references = new ArrayList<ParsingResult<Reference>>(7);
 
-        references.add(getReferenceArticle(false));
-        if (references.get(0).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferenceArticle(true);
-            if (strictVersion.matchLevel > references.get(0).matchLevel) // ...and see if it is more correct.
-                references.set(0, strictVersion);
-            references.get(0).result.ambiguity = true;
+            for (int i = 0; i < parserFunctions.size(); i++) { // Iterate through every parser function.
+                references.add(parserFunctions.get(i).apply(false));
+
+                /*if (references.get(i).matchLevel >= 1f) { // '>= 1f' is Safer than '== 1f'.
+                    if (references.get(i).ambiguous)
+                        ParserWarnings.addWarning(references.get(i).result, ParserWarnings.AMBIGUOUS);
+                    return references.get(i).result; // If we have a perfect match, there's no need for more parsing.
+                }*/
+
+                if (references.get(i).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
+                {
+                    ParsingResult<Reference> strictVersion = parserFunctions.get(i).apply(true);
+                    references.add(strictVersion); // ...and add it to the list.
+                   /* if (references.get(i + 1).matchLevel >= 1f)
+                        return references.get(i + 1).result;*/
+                }
+            }
+
+            int maxInd = 0; // A maximum search for the best fit.
+            for (int i = 1; i < references.size(); i++) {
+                if (references.get(i).matchLevel > references.get(maxInd).matchLevel)
+                    maxInd = i;
+            }
+            StringBuilder similars = new StringBuilder();
+            for (ParsingResult<Reference> ref : references) {
+                if (ref != references.get(maxInd) && ref.matchLevel == references.get(maxInd).matchLevel)
+                    similars.append(" " + ref.result.typeToString());
+            }
+
+            if (similars.length() > 0)
+                ParserWarnings.addWarning(references.get(maxInd).result,
+                        "Multiple type matches (" + similars.toString() + " ).");
+
+            if (references.get(maxInd).ambiguous)
+                ParserWarnings.addWarning(references.get(maxInd).result, ParserWarnings.AMBIGUOUS);
+            return references.get(maxInd).result; // Unpack the parsed Reference from the ParsingResult object.
+        } else {
+            Function<Boolean, ParsingResult<Reference>> selectedParser = null;
+            switch (mode) { // Select the parser function.
+            case Article:
+                selectedParser = parserFunctions.get(0);
+                break;
+            case Book:
+                selectedParser = parserFunctions.get(1);
+                break;
+            case Chapter:
+                selectedParser = parserFunctions.get(2);
+                break;
+            case Patent:
+                selectedParser = parserFunctions.get(3);
+                break;
+            case Standard:
+                selectedParser = parserFunctions.get(4);
+                break;
+            case Theses:
+                selectedParser = parserFunctions.get(5);
+                break;
+            default: // Only Web is possible at this point.
+                selectedParser = parserFunctions.get(6);
+                break;
+            }
+            ParsingResult<Reference> heuristicResult = selectedParser.apply(false);
+            if (heuristicResult.ambiguous) {
+                ParserWarnings.addWarning(heuristicResult.result, ParserWarnings.AMBIGUOUS);
+                ParsingResult<Reference> strictVersion = selectedParser.apply(true);
+                if (strictVersion.matchLevel > heuristicResult.matchLevel)
+                    return heuristicResult.result;
+            }
+            return heuristicResult.result;
         }
-
-        references.add(getReferenceBook(false));
-        if (references.get(1).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferenceBook(true);
-            if (strictVersion.matchLevel > references.get(1).matchLevel) // ...and see if it is more correct.
-                references.set(1, strictVersion);
-            references.get(1).result.ambiguity = true;
-        }
-
-        references.add(getReferenceChapter(false));
-        if (references.get(2).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferenceChapter(true);
-            if (strictVersion.matchLevel > references.get(2).matchLevel) // ...and see if it is more correct.
-                references.set(2, strictVersion);
-            references.get(2).result.ambiguity = true;
-        }
-
-        references.add(getReferenceStandard(false));
-        if (references.get(3).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferenceStandard(true);
-            if (strictVersion.matchLevel > references.get(3).matchLevel) // ...and see if it is more correct.
-                references.set(3, strictVersion);
-            references.get(3).result.ambiguity = true;
-        }
-
-        references.add(getReferencePatent(false));
-        if (references.get(4).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferencePatent(true);
-            if (strictVersion.matchLevel > references.get(4).matchLevel) // ...and see if it is more correct.
-                references.set(4, strictVersion);
-            references.get(4).result.ambiguity = true;
-        }
-
-        references.add(getReferenceWebsite(false));
-        if (references.get(5).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
-        {
-            ParsingResult<Reference> strictVersion = getReferenceWebsite(true);
-            if (strictVersion.matchLevel > references.get(5).matchLevel) // ...and see if it is more correct.
-                references.set(5, strictVersion);
-            references.get(5).result.ambiguity = true;
-        }
-
-        int maxInd = 0; // A simple maximum search for the Reference with the highest match value.
-        for (int i = 1; i < references.size(); i++) {
-            if (references.get(i).matchLevel > references.get(maxInd).matchLevel)
-                maxInd = i;
-        }
-
-        return references.get(maxInd).result; // Unpack the parsed Reference from the ParsingResult object.
     }
 
     /// Parses the input string as an ArticleReference.
     private ParsingResult<Reference> getReferenceArticle(boolean strict) {
         ArticleReference ref = new ArticleReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
-        result.matchLevel = 0f;
+        boolean zeroMatch = false; // True if the input cannot be an article reference.
+        boolean exclusiveMatch = false; // True if the input MUST be an article reference.
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
-            result.matchLevel++;
-
-        ref.date = parseDate();
-        if (ref.date != null)
-            result.matchLevel++;
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ParsingResult<String> title = null;
         title = parseTitle(strict);
         ref.title = title.result;
         result.ambiguous = title.ambiguous; // The result is ambiguous if the title is ambiguous.
-        if (ref.title != null && !ref.title.isEmpty())
+        if (ref.title != null)
             result.matchLevel++;
 
         ref.journalTitle = parseUntilComma(true);
-        if (ref.journalTitle != null && !ref.journalTitle.isEmpty())
+        if (ref.journalTitle != null)
             result.matchLevel++;
 
-        ref.volume = parseUntilComma(true);
-        if (ref.volume != null && !ref.volume.isEmpty()) {
+        ref.volume = parseUntilLBr(false);
+        if (ref.volume != null) {
             result.matchLevel++;
-            String numOfPages = HelperFunctions.parseNumOfPages(ref.volume);
-            if (numOfPages != null) { // If ref.volume seems like '\num\(\num(-\num)?\)'...
-                ref.volume = ref.volume.substring(0, ref.volume.indexOf('(')).trim();
-                ref.numOfPages = numOfPages;
-                // result.matchLevel++;
+            if (peekNext().type == TokenType.LBracket) {
+                getNext();
+                ref.issue = parseUntil(TokenType.RBracket);
+                if (ref.issue == null)
+                    zeroMatch = true;
+                else {
+                    getNext(); // Get the RBracket.
+                    exclusiveMatch = true;
+                }
+            } else {
+                zeroMatch = true;
+                ParserWarnings.addWarning(ref, "A journal article must contain an issue number.");
             }
+        } else { // An article ref. must contain two fields in the format 'number(number)''.
+            zeroMatch = true;
+            ParserWarnings.addWarning(ref, "A journal article must contain a volume number.");
         }
 
+        if (peekNext().type == TokenType.Comma) // The comma is officially NOT optional.
+            getNext();
+
         ref.pageRange = parsePageRange();
-        getNext();
-        if (ref.pageRange != null && !ref.pageRange.isEmpty())
+        if (ref.pageRange != null)
             result.matchLevel++;
+        else {
+            zeroMatch = true;
+            ParserWarnings.addWarning(ref, "A journal article must contain a page range.");
+        }
 
-        ref.DOI = parseDOI();
-        if (ref.DOI != null && !ref.DOI.isEmpty())
+        ignoreDot(); // The dot is officially NOT optional.
+
+        ref.DOI = parseDOI(ref);
+        if (ref.DOI != null)
             result.matchLevel++;
+        ref.URL = parseRetrievedFrom();
+        if (ref.URL != null && ref.DOI == null)
+            result.matchLevel++; // If both URL and DOI is present that's one point.
 
-        if (canRead()) // If there are remaining tokens, register them.
-            ref.restOfAPA = parseUntilEnd();
+        parseRemainderWithWarning(ref); // If there are remaining tokens, register them.
 
-        result.matchLevel /= 6f;
+        if (exclusiveMatch)
+            result.matchLevel = 1f;
+        else if (zeroMatch)
+            result.matchLevel = 0f;
+        else
+            result.matchLevel /= 7f;
+
         index = 0; // Go back to the first Token.
         ref.matchLevel = result.matchLevel;
         return result;
@@ -162,55 +256,52 @@ public class Parser {
 
     /// Parses the input string as a BookReference.
     private ParsingResult<Reference> getReferenceBook(boolean strict) {
-
         BookReference ref = new BookReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
         result.matchLevel = 0f;
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+
+        ref.title = parseUntil(TokenType.LBracket, TokenType.Dot);
+        if (ref.title != null)
             result.matchLevel++;
 
-        ref.date = parseDate();
-        if (ref.date != null)
-            result.matchLevel++;
-
-        ParsingResult<String> title = null;
-        title = parseTitle(strict);
-        ref.title = title.result;
-        result.ambiguous = title.ambiguous; // The result is ambiguous if the title is ambiguous.
-        if (ref.title != null && !ref.title.isEmpty())
-            result.matchLevel++;
-
-        int indexBefore = index; // The next part can be one of three different types (DOI, URL or publisher).
-        ref.DOI = parseDOI();
-        if (ref.DOI == null) {
-            index = indexBefore;
-            ref.URL = parseURL();
-        } else
-            ref.matchLevel++;
-        if (ref.URL == null) {
-            index = indexBefore;
-            ref.publisher = parseUntilComma(true);
-        } else
-            ref.matchLevel++;
-        if (ref.publisher != null)
-            ref.matchLevel++;
-
-        ignoreSpace();
-        // If there is publisher, and the next char. is a colon, there may be a
-        // publisher name part after it.
-        if (ref.publisher != null || peekNext().type == Token.TokenType.Colon) {
+        if (peekNext().type == TokenType.LBracket) { // title (edition)
             getNext();
-            ref.publisherName = parseUntilDot(true);
-            if (ref.publisherName != null && !ref.publisherName.isEmpty())
-                ref.matchLevel++;
+            ref.edition = parseUntil(TokenType.RBracket);
+            getNext();
+            ignoreDot();
+        } else if (peekNext().type == TokenType.Dot) // title.
+            getNext();
+
+        ref.URL = parseRetrievedFrom();
+        if (ref.URL != null) // No publisher or place, just a URL; probably an e-book.
+            result.matchLevel /= 3f;
+        else {
+            ref.publisherPlace = parseUntil(TokenType.Colon, TokenType.Dot);
+            if (ref.publisherPlace == null)
+                ParserWarnings.addWarning(ref, "The publisher's place is not defined.");
+            else
+                result.matchLevel++;
+
+            if (getNext().type == TokenType.Colon) { // place: publisher
+                getNext();
+                ref.publisher = parseUntil(TokenType.Dot);
+                if (ref.publisherPlace == null)
+                    ParserWarnings.addWarning(ref, "There's no publisher defined.");
+                else
+                    result.matchLevel++;
+                ignoreDot();
+            } else if (getNext().type == TokenType.Dot)
+                getNext();
+
+            ref.DOI = parseDOI(ref);
+            ref.URL = parseRetrievedFrom();
+            result.matchLevel /= 5f;
         }
 
-        if (canRead()) // If there are remaining tokens, register them.
-            ref.restOfAPA = parseUntilEnd();
+        parseRemainderWithWarning(ref);
 
-        result.matchLevel /= 5f;
         index = 0; // Go back to the first Token.
         ref.matchLevel = result.matchLevel;
         return result;
@@ -218,18 +309,16 @@ public class Parser {
 
     /// Parses the input string as a ChapterReference.
     private ParsingResult<Reference> getReferenceChapter(boolean strict) {
-
         ChapterReference ref = new ChapterReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
-        result.matchLevel = 0f;
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
-            result.matchLevel++;
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ref.date = parseDate();
         if (ref.date != null)
             result.matchLevel++;
+        else
+            ParserWarnings.addDateWarning(ref);
 
         ParsingResult<String> title = null;
         title = parseTitle(strict); // This is the title of the CHAPTER, not the book.
@@ -246,8 +335,10 @@ public class Parser {
                 result.matchLevel++;
         }
 
-        if (canRead()) // If there are remaining tokens, register them.
+        if (canRead()) { // If there are remaining tokens, register them.
             ref.restOfAPA = parseUntilEnd();
+            ParserWarnings.addRemainderWarning(ref);
+        }
 
         result.matchLevel /= 4f; // TODO
         index = 0; // Go back to the first Token.
@@ -257,18 +348,12 @@ public class Parser {
 
     /// Parses the input string as a WebReference.
     private ParsingResult<Reference> getReferenceWebsite(boolean strict) {
-
         WebReference ref = new WebReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
+        boolean zeroMatch = false; // True if the input cannot be a web reference.
         result.matchLevel = 0f;
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
-            result.matchLevel++;
-
-        ref.date = parseDate();
-        if (ref.date != null)
-            result.matchLevel++;
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ParsingResult<String> title = null;
         title = parseTitle(strict);
@@ -279,34 +364,30 @@ public class Parser {
 
         ignoreSpace();
         ref.URL = parseRetrievedFrom();
-        if (ref.URL == null)
-            result.matchLevel = 0f; // The next field MUST be 'retrieved from'.
-        else
+        if (ref.URL == null) {
+            ParserWarnings.addWarning(ref, ParserWarnings.URL_MISSING);
+            zeroMatch = true;
+        } else
             result.matchLevel++;
 
-        if (canRead()) // If there are remaining tokens, register them.
+        if (canRead()) { // If there are remaining tokens, register them.
             ref.restOfAPA = parseUntilEnd();
+            ParserWarnings.addRemainderWarning(ref);
+        }
 
         result.matchLevel /= 4f;
         index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
+        ref.matchLevel = zeroMatch ? 0f : result.matchLevel;
         return result;
     }
 
     /// Parses the input string as a PatentReference.
     private ParsingResult<Reference> getReferencePatent(boolean strict) {
-
         PatentReference ref = new PatentReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
         result.matchLevel = 0f;
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
-            result.matchLevel++;
-
-        ref.date = parseDate();
-        if (ref.date != null)
-            result.matchLevel++;
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ignoreSpace();
         ref.patentNumber = parsePatentNumber();
@@ -329,27 +410,22 @@ public class Parser {
 
     /// Parses the input string as a StandardReference.
     private ParsingResult<Reference> getReferenceStandard(boolean strict) {
-
         StandardReference ref = new StandardReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
+        boolean zeroMatch = false; // True if the input cannot be a standard reference.
         result.matchLevel = 0f;
 
-        ref.authors = parseAuthors();
-        if (ref.authors != null && ref.authors.size() > 0)
-            result.matchLevel++;
-
-        ref.date = parseDate();
-        if (ref.date != null)
-            result.matchLevel++;
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ref.title = parseUntilLBr(false);
         if (ref.title != null && !ref.title.isEmpty())
             result.matchLevel++;
 
         ref.standardNumber = parseStandardNumber();
-        if (ref.standardNumber == null)
-            result.matchLevel = 0; // A standard MUST have a standard number.
-        else
+        if (ref.standardNumber == null) {
+            ParserWarnings.addWarning(ref, "A standard number must be specified.");
+            zeroMatch = true;
+        } else
             result.matchLevel++;
 
         ignoreSpace();
@@ -362,14 +438,163 @@ public class Parser {
         } else
             result.matchLevel++;
 
+        if (canRead()) { // If there are remaining tokens, register them.
+            ref.restOfAPA = parseUntilEnd();
+            ParserWarnings.addRemainderWarning(ref);
+        }
+
         result.matchLevel /= 5f;
         index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
+        ref.matchLevel = zeroMatch ? 0f : result.matchLevel;
+        return result;
+    }
+
+    /// Parses the input string as a ThesisReference.
+    private ParsingResult<Reference> getReferenceThesis(boolean strict) {
+        ThesisReference ref = new ThesisReference();
+        ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
+        boolean zeroMatch = false; // True if the input cannot be a theses reference.
+        result.matchLevel = 0f;
+
+        result.matchLevel = parsePrefixInto(ref, AuthorsMode.JustOne);
+        if (ref.authors != null && ref.authors.size() > 1)
+            zeroMatch = true;
+
+        ref.title = parseUntilLBr(false);
+        if (ref.title != null && !ref.title.isEmpty())
+            result.matchLevel++;
+
+        if (peekNext().type != TokenType.LBracket) { // Missing genre.
+            zeroMatch = true;
+            ParserWarnings.addWarning(ref, "The genre of the thesis is missing.");
+            parseRemainderWithWarning(ref);
+        } else { // Genre NOT missing.
+            getNext();
+
+            String next = parseUntil(TokenType.RBracket, TokenType.Comma);
+            if (peekNext().type == TokenType.RBracket) { // (genre) *
+                ref.genre = next;
+                getNext();
+
+                ignoreDot();
+                ref.URL = parseRetrievedFrom();
+                if (ref.URL != null) {
+                    zeroMatch = true;
+                    ParserWarnings.addIllegalFormatWarning(ref);
+                }
+
+                ref.publisher = HelperFunctions.withoutDot(parseUntilComma(true));
+                if (ref.publisher != null)
+                    ref.matchLevel++;
+                else
+                    ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHER_MISSING);
+
+                ref.publisherPlace = HelperFunctions.withoutDot(parseUntilEnd());
+                if (ref.publisherPlace != null)
+                    result.matchLevel++;
+                else
+                    ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHING_PLACE_MISSING);
+
+                result.matchLevel /= 4f; // There are 4 key fields on this path.
+            } else if (peekNext().type == TokenType.Comma) { // (genre, *) Retrieved from URL
+                ref.genre = next;
+                getNext();
+
+                ref.publisher = parseUntil(TokenType.RBracket, TokenType.Comma);
+                if (ref.publisher != null)
+                    result.matchLevel++;
+                else
+                    ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHER_MISSING);
+
+                if (peekNext().type == TokenType.Comma) { // (genre, pub, pubpl) Retrieved from URL
+                    getNext();
+
+                    ref.publisherPlace = parseUntil(TokenType.RBracket);
+                    if (ref.publisherPlace != null)
+                        result.matchLevel++;
+                    else
+                        ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHING_PLACE_MISSING);
+
+                    getNext(); // Get the closing bracket.
+                } else if (peekNext().type == TokenType.RBracket) { // (genre, pub) Retrieved from URL
+                    ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHING_PLACE_MISSING);
+                    getNext();
+                } else // error
+                    parseRemainderWithWarning(ref);
+
+                ignoreDot();
+                ref.URL = parseRetrievedFrom();
+                if (ref.URL != null)
+                    result.matchLevel++;
+                else
+                    ParserWarnings.addWarning(ref, ParserWarnings.URL_MISSING);
+
+                result.matchLevel /= 6f; // There are 6 key fields on this path.
+            } else // error
+                parseRemainderWithWarning(ref);
+        }
+
+        parseRemainderWithWarning(ref);
+
+        index = 0; // Go back to the first Token.
+        ref.matchLevel = zeroMatch ? 0f : result.matchLevel;
         return result;
     }
     // endregion
 
+    /// Parses the remaining tokens into the 'note' field, and adds a warning.
+    private void parseRemainderWithWarning(Reference ref) {
+        ref.restOfAPA = parseUntilEnd();
+        if (ref.restOfAPA != null)
+            ParserWarnings.addRemainderWarning(ref);
+    }
+
+    /// Parses authors and date into the given Reference, and returns the a
+    /// 'match level' value from { 0, 1, 2 }.
+    private float parsePrefixInto(Reference ref, AuthorsMode mode) {
+        float matchLevel = 0f;
+
+        ref.authors = parseAuthors(ref);
+        if (ref.authors == null)
+            ParserWarnings.addNoAuthorsWarning(ref);
+        else {
+            switch (mode) {
+            case AtLeastOne:
+                if (ref.authors.size() == 0)
+                    ParserWarnings.addWarning(ref, "At least one author must be specified.");
+                else
+                    matchLevel++;
+                break;
+            case MoreThanOne:
+                if (ref.authors.size() <= 1)
+                    ParserWarnings.addWarning(ref, "At least two authors must be specified.");
+                else
+                    matchLevel++;
+                break;
+            case JustOne:
+                if (ref.authors.size() != 1)
+                    ParserWarnings.addWarning(ref, "Exactly one author must be specified.");
+                else
+                    matchLevel++;
+                break;
+            }
+        }
+
+        ref.date = parseDate();
+        if (ref.date != null)
+            matchLevel++;
+        else
+            ParserWarnings.addDateWarning(ref);
+
+        return matchLevel;
+    }
+
+    /// Parses the 'retrieved from' (or just 'from') field and returns if without
+    /// the
+    /// string "retrieved from" (or just "from").
+    /// If the initial words are found, all remaining token are read.
     private String parseRetrievedFrom() {
+        ignoreSpace();
         if (peekNext().lexeme.equalsIgnoreCase("Retrieved")) {
             getNext();
             ignoreSpace();
@@ -377,18 +602,22 @@ public class Parser {
         if (peekNext().lexeme.equalsIgnoreCase("from")) {
             getNext();
             ignoreSpace();
-            return parseUntilEnd();
+            return parseURL();
         }
         return null;
     }
 
-    // Parses a patent number that ends with a number and a dot after it.
+    /// Parses a patent number that ends with a number and a dot after it.
     private String parsePatentNumber() {
         StringBuilder sb = new StringBuilder();
+        boolean containsNo = false;
 
-        while (canRead() && !containsDigit(peekNext().lexeme))
+        while (canRead() && !HelperFunctions.containsDigit(peekNext().lexeme)) {
+            if (!containsNo && peekNext().type == TokenType.Word && peekNext().lexeme.equalsIgnoreCase("No"))
+                containsNo = true;
             sb.append(getNext().lexeme);
-        if (!canRead()) // EOF denotes an invalid patent number.
+        }
+        if (!canRead() || !containsNo) // EOF denotes an invalid patent number.
             return null;
 
         sb.append(parseUntilDot(true));
@@ -396,19 +625,10 @@ public class Parser {
         return sb.length() == 0 ? null : sb.toString();
     }
 
-    // Determines if the given string contains any digits.
-    private boolean containsDigit(String str) {
-        for (char ch : str.toCharArray()) {
-            if (ch >= '0' && ch <= '9')
-                return true;
-        }
-        return false;
-    }
-
-    // Parses the title Tokens into a String.
-    // In strict mode, the parsing will stop at the first full stop.
-    // In non-strict mode, the parser can consider some full stops to be part of
-    // the title.
+    /// Parses the title Tokens into a String.
+    /// In strict mode, the parsing will stop at the first dot.
+    /// In non-strict mode, the parser may consider some dots to be part of
+    /// the title.
     private ParsingResult<String> parseTitle(boolean strict) {
         StringBuilder sb = new StringBuilder();
         boolean ambiguity = false;
@@ -424,15 +644,18 @@ public class Parser {
             else if (next.type == Token.TokenType.RBracket)
                 brDepth--;
 
-            if (brDepth == 0 && next.type == Token.TokenType.FullStop) {
+            if (brDepth == 0 && (next.type == Token.TokenType.Dot || !strict && canBeTitleEnding(next.type))) {
                 if (strict) // If we are parsing it strictly, break on full stop.
                     break;
 
-                if (last.type != Token.TokenType.Integer && last.lexeme.toLowerCase() != "vol"
-                        && !HelperFunctions.isRomanNumeral(last.lexeme))
+                if (shouldBreakInNonStrict(last, next)) {
+                    if (next.type == TokenType.QuestionMark || next.type == TokenType.ExclaMark) {
+                        sb.append(next.lexeme);
+                        ambiguity = true;
+                    }
                     break;
-                else // If the full stop is considered a part of the title in non-strict mode, the
-                     // input is ambiguous.
+                } else // If the full stop is considered a part of the title in non-strict mode, the
+                       // input is ambiguous.
                     ambiguity = true;
             }
             sb.append(next.lexeme);
@@ -441,61 +664,91 @@ public class Parser {
         return new ParsingResult<String>(sb.toString().trim(), 0f, ambiguity); // The second parameter is meaningless.
     }
 
-    // Parses the next part that looks like '\n-\n\.'.
-    private String parsePageRange() {
-        Integer begin, end;
-
-        ignoreSpace();
-        begin = parseInt();
-
-        if (peekNext().type != Token.TokenType.Hyphen)
-            return null;
-        else
-            getNext();
-
-        end = parseInt();
-
-        if (peekNext().type != Token.TokenType.FullStop)
-            return null;
-        else
-            getNext();
-
-        if (begin == null || end == null)
-            return null;
-        else
-            return begin + "-" + end;
+    private boolean canBeTitleEnding(TokenType token) {
+        return token == TokenType.QuestionMark || token == TokenType.ExclaMark || token == TokenType.Dot;
     }
 
-    private String parseDOI() {
+    /// Determines if the parser should break on a dot with the specified token
+    /// before it.
+    private boolean shouldBreakInNonStrict(Token last, Token next) {
+        return canBeTitleEnding(next.type) || next.type == Token.TokenType.Dot && last.type != Token.TokenType.Integer
+                && last.lexeme.toLowerCase() != "vol" && !HelperFunctions.isRomanNumeral(last.lexeme);
+    }
+
+    /// Parses a page range in the format 'number-number' or just 'number'. Returns
+    /// null on error.
+    private String parsePageRange() {
+        String begin;
+
+        ignoreSpace();
+        if (peekNext().type != Token.TokenType.Integer)
+            return null;
+        else
+            begin = getNext().lexeme;
+
+        ignoreSpace();
+        if (peekNext().type == Token.TokenType.Hyphen) { // There's an 'end'.
+            String end;
+            getNext();
+            ignoreSpace();
+            if (peekNext().type != Token.TokenType.Integer)
+                return null;
+            else
+                end = getNext().lexeme;
+            ignoreSpace();
+            if (peekNext().type != Token.TokenType.Dot)
+                return null;
+            else
+                getNext();
+            return begin + "-" + end;
+        } else if (peekNext().type == Token.TokenType.Dot) { // There's no 'end', only 'begin'.
+            getNext();
+            return begin;
+        } else
+            return null;
+    }
+
+    /// Parses a DOI field. It must start with 'doi:'. Invalid DOIs may be accepted
+    /// too.
+    private String parseDOI(Reference ref) {
+        ignoreSpace();
         if (!peekNext().lexeme.equalsIgnoreCase("doi"))
             return null;
         else
             getNext();
 
+        ignoreSpace();
         if (peekNext().type != TokenType.Colon)
             return null;
         else
             getNext();
 
-        return parseUntilEnd();
+        ignoreSpace();
+        if (peekNext().type != TokenType.DOI) {
+            ParserWarnings.addWarning(ref, "Invalid DOI.");
+            return parseWhile(TokenType.Integer, TokenType.Dot, TokenType.DOI, TokenType.Hyphen, TokenType.Slash);
+        } else
+            return getNext().lexeme;
     }
 
     private String parseURL() {
-        ignoreSpace();
-        return null; /// TODO
+        return parseUntil(TokenType.WhSpace); // WhSpace cannot be in an URL.
     }
 
-    // Parses a list of name parts into an ArrayList of Authors.
-    private ArrayList<Author> parseAuthors() {
+    /// Parses a list of name parts into an ArrayList of Authors.
+    private ArrayList<Author> parseAuthors(Reference ref) {
         ArrayList<String> authors0 = new ArrayList<String>();
         ArrayList<Author> authors1 = new ArrayList<Author>();
 
-        authors0.add(parseUntilCommaOrLBr(false));
+        authors0.add(parseUntilNameDelimiter());
         if (authors0.get(0) == null)
             return null;
-        while (peekNext().type == Token.TokenType.Comma) {
+        while (peekNext().type == Token.TokenType.Comma || peekNext().type == Token.TokenType.TripleDots
+                || peekNext().type == TokenType.And) {
             getNext();
-            authors0.add(parseUntilCommaOrLBr(false));
+            String nextName = parseUntilNameDelimiter();
+            if (nextName != null && !nextName.isEmpty())
+                authors0.add(nextName);
             if (authors0.get(authors0.size() - 1) == null)
                 return null;
         }
@@ -508,25 +761,15 @@ public class Parser {
         if (authors0.size() % 2 == 1) { // In case the list of names ends with a rogue name.
             authors0.set(authors0.size() - 1, HelperFunctions.trimAll(authors0.get(authors0.size() - 1)));
             authors1.add(new Author(authors0.get(authors0.size() - 1)));
+            ParserWarnings.addWarning(ref,
+                    "The last author (" + authors0.get(authors0.size() - 1) + ") has only one name.");
         }
 
         return authors1;
     }
 
-    private Integer parseInt() {
-        Integer num = null;
-
-        ignoreSpace();
-        if (peekNext().type != Token.TokenType.Integer)
-            return null;
-        else
-            num = Integer.parseInt(getNext().lexeme);
-
-        return num;
-    }
-
-    // Parses the date tokens into a String.
-    private CSLDateStruct parseDate() { /// TODO: intervals
+    /// Parses the date or date range tokens into a CSLDateStruct.
+    private CSLDateStruct parseDate() {
         ArrayList<String> serialized = new ArrayList<String>(1);
 
         ignoreSpace();
@@ -536,9 +779,11 @@ public class Parser {
             getNext();
 
         while (canRead() && peekNext().type != TokenType.RBracket) { // Read date parts.
-            serialized.add(parseUntilCommaOrRBr(false));
-            if (peekNext().type != TokenType.RBracket)
-                getNext();
+            serialized.add(parseUntilDateDelimiter());
+            if (peekNext().type != TokenType.RBracket) {
+                if (getNext().type == TokenType.Hyphen)
+                    serialized.add("-");
+            }
         }
         if (canRead()) // If the input is correct, read the next RBracket.
             getNext();
@@ -546,7 +791,7 @@ public class Parser {
             return null;
 
         ignoreSpace();
-        if (peekNext().type != Token.TokenType.FullStop)
+        if (peekNext().type != Token.TokenType.Dot)
             return null;
         else
             getNext();
@@ -554,9 +799,11 @@ public class Parser {
         return HelperFunctions.datePartsToCSLDateStruct(serialized);
     }
 
-    // Parses the standard number into a String.
+    /// Parses the standard number into a String.
     private String parseStandardNumber() {
         StringBuilder standard = new StringBuilder();
+        boolean lastIsNum = false;
+        String firstLexeme = null;
 
         ignoreSpace();
         if (peekNext().type != Token.TokenType.LBracket) // Expect a left bracket.
@@ -564,31 +811,37 @@ public class Parser {
         else
             getNext();
 
-        while (canRead() && peekNext().type != TokenType.RBracket) // Read standard number parts.
+        while (canRead() && peekNext().type != TokenType.RBracket) { // Read standard number parts.
+            if (firstLexeme == null)
+                firstLexeme = peekNext().lexeme;
+            lastIsNum = peekNext().type == TokenType.Integer;
             standard.append(getNext().lexeme);
+        }
         if (canRead()) // If the input is correct, read the next RBracket.
             getNext();
         else
             return null;
 
         ignoreSpace();
-        if (peekNext().type != Token.TokenType.FullStop)
+        if (peekNext().type != Token.TokenType.Dot)
             return null;
         else
             getNext();
 
-        return standard.toString();
+        boolean correct = lastIsNum && !firstLexeme.equalsIgnoreCase("vol");
+
+        return correct ? standard.toString() : null;
     }
 
-    // Calls parseUntil with FullStop.
+    /// Calls parseUntil with Dot.
     private String parseUntilDot(boolean skipLast) {
-        String result = parseUntil(Token.TokenType.FullStop);
+        String result = parseUntil(Token.TokenType.Dot);
         if (skipLast && canRead())
             getNext();
         return result;
     }
 
-    // Calls parseUntil with Comma.
+    /// Calls parseUntil with Comma.
     private String parseUntilComma(boolean skipLast) {
         String result = parseUntil(Token.TokenType.Comma);
         if (skipLast && canRead())
@@ -596,7 +849,7 @@ public class Parser {
         return result;
     }
 
-    // Calls parseUntil with Comma and LBracket.
+    /// Calls parseUntil with Comma and LBracket.
     private String parseUntilCommaOrLBr(boolean skipLast) {
         String result = parseUntil(Token.TokenType.Comma, Token.TokenType.LBracket);
         if (skipLast && canRead())
@@ -604,15 +857,13 @@ public class Parser {
         return result;
     }
 
-    // Calls parseUntil with Comma and RBracket.
-    private String parseUntilCommaOrRBr(boolean skipLast) {
-        String result = parseUntil(Token.TokenType.Comma, Token.TokenType.RBracket);
-        if (skipLast && canRead())
-            getNext();
+    /// Calls parseUntil with Comma and RBracket.
+    private String parseUntilDateDelimiter() {
+        String result = parseUntil(Token.TokenType.Comma, Token.TokenType.RBracket, Token.TokenType.Hyphen);
         return result;
     }
 
-    // Calls parseUntil with LBracket.
+    /// Calls parseUntil with LBracket.
     private String parseUntilLBr(boolean skipLast) {
         String result = parseUntil(Token.TokenType.LBracket);
         if (skipLast && canRead())
@@ -620,9 +871,21 @@ public class Parser {
         return result;
     }
 
-    // Parses the input until a Token with a specified TokenType is met.
-    // (Except if they are inside brackets.)
-    // Leading and trailing whitespaces are ignored.
+    /// Calls parseUntil with Comma, LBracket and TripleDots; with !skipLast.
+    private String parseUntilNameDelimiter() {
+        String result = parseUntil(TokenType.Comma, TokenType.LBracket, TokenType.TripleDots, TokenType.And);
+        if (peekNext().type == TokenType.LBracket && editorTokenAhead()) {
+            getNext();
+            result += " (" + parseUntil(TokenType.RBracket) + ")";
+            getNext();
+            ignoreDot(); // There may be a dot after "(ed.)".
+        }
+        return result;
+    }
+
+    /// Parses the input until a Token with a specified TokenType is met.
+    /// (Except if they are inside brackets.)
+    /// Leading and trailing whitespaces are ignored.
     private String parseUntil(Token.TokenType... terminators) {
         StringBuilder sb = new StringBuilder();
         int brDepth = 0;
@@ -639,11 +902,35 @@ public class Parser {
         return sb.length() == 0 ? null : sb.toString().trim();
     }
 
+    /// Returns the remaining tokens as a string.
     private String parseUntilEnd() {
         StringBuilder sb = new StringBuilder();
         while (canRead())
             sb.append(getNext().lexeme);
         return sb.length() == 0 ? null : sb.toString().trim();
+    }
+
+    /// Returns the next consecutive tokens of the specified type(s).
+    private String parseWhile(Token.TokenType... valid) {
+        StringBuilder sb = new StringBuilder();
+        List<Token.TokenType> valids = Arrays.asList(valid);
+        while (canRead() && valids.contains(peekNext().type))
+            sb.append(getNext().lexeme);
+        return sb.length() == 0 ? null : sb.toString().trim();
+    }
+
+    /// Determines if the next Tokens are "(ed)" or "(ed.)" or "(eds)" or "(eds.)".
+    private boolean editorTokenAhead() {
+        ArrayList<Token> next = peekAhead(4);
+        boolean goodLexeme = next.get(1).lexeme.equalsIgnoreCase("ed") || next.get(1).lexeme.equalsIgnoreCase("eds");
+        if (next.get(0).type == TokenType.LBracket && goodLexeme && next.get(2).type == TokenType.RBracket) {
+            return true;
+        }
+        if (next.get(0).type == TokenType.LBracket && goodLexeme && next.get(2).type == TokenType.Dot
+                && next.get(3).type == TokenType.RBracket) {
+            return true;
+        }
+        return false;
     }
 
 }

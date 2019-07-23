@@ -11,8 +11,8 @@ public abstract class Reference {
     @SerializedName("match-level")
     public double matchLevel;
 
-    @SerializedName("ambiguity")
-    public boolean ambiguity = false;
+    // @SerializedName("title-ambiguity")
+    // public boolean ambiguity = false;
 
     @SerializedName("type")
     public String typeToString() {
@@ -26,8 +26,10 @@ public abstract class Reference {
             return "standard";
         else if (getClass() == WebReference.class)
             return "website";
-        else
+        else if (getClass() == PatentReference.class)
             return "patent";
+        else
+            return "thesis";
     }
 
     @SerializedName("title")
@@ -51,6 +53,9 @@ public abstract class Reference {
         String json = serializer.toJson(this);
         return json;
     }
+
+    @SerializedName("warnings")
+    public ArrayList<String> warnings;
 }
 
 class ArticleReference extends Reference {
@@ -61,21 +66,8 @@ class ArticleReference extends Reference {
     @SerializedName("volume")
     public String volume;
 
-    @SerializedName("page")
-    public String pageRange;
-
-    @SerializedName("DOI")
-    public String DOI;
-
-    @SerializedName("number-of-pages")
-    public String numOfPages; // TODO: non-string
-
-}
-
-class BookReference extends Reference {
-
-    @SerializedName("publisher")
-    public String publisher;
+    @SerializedName("issue")
+    public String issue;
 
     @SerializedName("DOI")
     public String DOI;
@@ -83,11 +75,40 @@ class BookReference extends Reference {
     @SerializedName("URL")
     public String URL;
 
-    @SerializedName("publisher-name")
+    @SerializedName("page")
+    public String pageRange;
+
+}
+
+class BookReference extends Reference {
+
+    @SerializedName("publisher") // TODO: name
+    public String publisher;
+
+    @SerializedName("edition") // TODO: name
+    public String edition;
+
+    @SerializedName("DOI")
+    public String DOI;
+
+    @SerializedName("URL")
+    public String URL;
+
+    @SerializedName("publisher-name") // TODO: name
     public String publisherName;
 
-    @SerializedName("number-of-pages")
-    public String numOfPages; // TODO: non-string
+    @SerializedName("publisher-place") // TODO: name
+    public String publisherPlace;
+
+}
+
+class ChapterReference extends BookReference {
+
+    @SerializedName("book-title") // TODO: name
+    public String bookTitle;
+
+    @SerializedName("page") // TODO: name
+    public String pageRange;
 
 }
 
@@ -98,25 +119,6 @@ class WebReference extends Reference {
 
     @SerializedName("article-title")
     public String articleTitle;
-
-}
-
-class ChapterReference extends Reference {
-
-    @SerializedName("publisher")
-    public String publisher;
-
-    @SerializedName("URL")
-    public String URL;
-
-    @SerializedName("DOI")
-    public String DOI;
-
-    @SerializedName("number-of-pages")
-    public String numOfPages; // TODO: non-string
-
-    @SerializedName("book-title") // TODO: name
-    public String bookTitle;
 
 }
 
@@ -146,5 +148,21 @@ class StandardReference extends Reference {
 
     @SerializedName("publisher") // TODO: name
     public String publisher;
+
+}
+
+class ThesisReference extends Reference {
+
+    @SerializedName("genre")
+    public String genre;
+
+    @SerializedName("publisher-place")
+    public String publisherPlace;
+
+    @SerializedName("publisher")
+    public String publisher;
+
+    @SerializedName("URL")
+    public String URL;
 
 }

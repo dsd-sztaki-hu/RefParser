@@ -3,7 +3,7 @@ package hu.sztaki.dsd.refparser;
 public class Token {
 
     public enum TokenType {
-        Word, Comma, FullStop, LBracket, RBracket, WhSpace, Integer, DOI, Hyphen, Colon, Unknown
+        Word, Comma, Dot, LBracket, RBracket, WhSpace, Integer, DOI, Hyphen, Colon, Unknown, TripleDots, Slash, ExclaMark, QuestionMark, And
     }; // 'Unknown' is an extremal value.
 
     public TokenType type;

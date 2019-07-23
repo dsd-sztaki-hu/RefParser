@@ -1,10 +1,10 @@
-Agoston, G., & Horváth, S. (2019). Mobil mérőkonténer használati mintaoltalom.
-Agoston, G., & Horváth, S. (2019). MAVAD védjegy oltalom.
-Dr. Balogh, I., Dr. Németh, Á., & Nagy, B. J. (2019). Főleg heterotróf mikroalgás biostimulátor levéltrágya és egyben bioeffektor talajkondicionáló, és eljárás az előállítására.
-Faitli, J., Magyar, T., Erdélyi, A., Jambrich, R., Murányi, A., Kontra, J., & Várfalvi, J. (2019). Kapcsolási elrendezés és eljárás hulladéklerakók bomlási hőjének kinyerésére és hasznosítására = COUPLING ARR ANGEMENT AND PROCESSOR FOR RECOVERING AND RECYCLING OF SCRAP YARD DECOMPOSITION HEAT.
-Ian, J. D., Gabriel, A. J., JR, R. W., Leland, W., David, W., Thomas, C., … Andras, P. (2019). ARTICULATED ROBOTIC PROBES.
-Marton, L. C., Pintér, J., Berzy, T., Spitkó, T., Szőke, C., & Tóthné, Z. Z. (2019). Mv Magro.
-Marton, L. C., Pintér, J., Berzy, T., Spitkó, T., Szőke, C., & Tóthné, Z. Z. (2019). Mv Primasil.
-Sáfrán, G. (2019). Berendezés vékonyrétegek mikro-kombinatorikus növesztésére anyagtudományi -elsősorban transzmissziós elektronmikroszkópos- vizsgálatokhoz.
-Viharos, Z. J., Kis, K. B., Paniti, I., Farkas, B., Csorba, L., Szalay, T., & Czampa, M. (2019). Method For Micro-Electro-Discharge Machining (μ-Edm) Of Ceramic Workpieces.
-ADLER, T., TIHANYI, V., & NÉMETH, H. (2018). Kompressorsystem für ein Nutzfahrzeug.
+# Khouri, J. F., Bhat, R., Chirputkar, A. S., Sitaram, M. K., Beno, J. P., & Law, D. H. (2015). U.S. Patent No. 8,954,863. Washington, DC: U.S. Patent and Trademark Office.
+# Chan, K. F. (2007). U.S. Patent No. 7,181,738. Washington, DC: U.S. Patent and Trademark Office.
+# Mangini, A. L., Baher, J. L., & Wallen, M. T. (2015). U.S. Patent No. 8,930,843. Washington, DC: U.S. Patent and Trademark Office.
+# Reter, J., Miller, K., Richard, P., Ready, J., Durkin, T., & Fraser, A. (2016). U.S. Patent No. 9,460,422. Washington, DC: U.S. Patent and Trademark Office.
+# Khouri, J. F., Bhat, R., Chirputkar, A. S., Sitaram, M. K., Griffin, K., & Beno, J. P. (2015). U.S. Patent No. 8,938,690. Washington, DC: U.S. Patent and Trademark Office.
+# Balogh, E., Braines, D. S., Kortright, E. V., Ling, J. W., Strain, A., & Zunic, N. (2012). U.S. Patent No. 8,131,801. Washington, DC: U.S. Patent and Trademark Office.
+Erhart, G. W., Matula, V. C., & Skiba, D. J. (2010). U.S. Patent Application No. 12/241,906.
+Irwin, M. D., Lovelace, J., & Mielczarek, K. (2018). Australian Patent No. AU 2018204249. Canberra, ACT: IP Australia.
+Bevitt, A. J. (2018). Australian Patent No. AU 2018100960. Retrieved from http://pericles.ipaustralia.gov.au/ols/auspat/applicationDetails.do? applicationNo=2018100960
+Botura, G. C., Wilson, T. M., & Hartzler, B. (2018). European Patent No. EP3331317. Retrieved from https://www.epo.org/application?number=EP17205218

@@ -1,0 +1,4 @@
+Kacsuk, P., Kovacs, J., Farkas, Z., Marosi, A. C., Gombas, G., & Balaton, Z. (2009). SZTAKI desktop grid (SZDG): a flexible and scalable desktop grid system. Journal of Grid Computing, 7(4), 439.
+Kacsuk, P. (2009). SZTAKI desktop grid (SZDG): a flexible and scalable desktop grid system. Journal of Grid Computing, 7(4), 439.
+Kacsuk (2009). SZTAKI desktop grid (SZDG): a flexible and scalable desktop grid system. Journal of Grid Computing, 7(4), 439.
+(2009). SZTAKI desktop grid (SZDG): a flexible and scalable desktop grid system. Journal of Grid Computing, 7(4), 439.
