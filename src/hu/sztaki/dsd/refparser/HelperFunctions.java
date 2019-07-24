@@ -65,7 +65,7 @@ final class HelperFunctions {
             return year == null ? null : new CSLDateStruct(year);
         }
 
-        if (parts.size() == 2) { // It's either [month, year] or [year, month].
+        if (parts.size() == 2) { // It's either MY or YM.
             Integer year = null, month = null;
 
             year = parseIntOrNull(parts.get(0));

@@ -17,10 +17,10 @@ public final class RefParser {
         if (args.length > 0)
             loadFile(args[0]);
         else
-            loadFile("tests/theses.txt");
+            loadFile("tests/articles.txt");
 
         for (String apa : examples) {
-            printParsedAPA(apa, ParsingMode.Theses);
+            printParsedAPA(apa, ParsingMode.Article);
             System.out.println();
             System.out.println();
             System.out.println();

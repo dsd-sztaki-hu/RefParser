@@ -36,7 +36,7 @@ public abstract class Reference {
     public String title;
 
     @SerializedName("author")
-    public ArrayList<Author> authors;
+    public ArrayList<CSLAuthorStruct> authors;
 
     @SerializedName("issued")
     public CSLDateStruct date;

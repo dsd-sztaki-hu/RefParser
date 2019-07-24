@@ -7,8 +7,8 @@ final class ParserWarnings {
     public static final String PUBLISHING_PLACE_MISSING = "The publishing place is missing.";
     public static final String PUBLISHER_MISSING = "The publisher is missing.";
     public static final String URL_MISSING = "No URL was specified.";
-    
-    public static final String AMBIGUOUS = "There is ambiguity in the title.";
+
+    public static final String AMBIGUOUS = "The parser detected ambiguity.";
 
     public static void addNoAuthorsWarning(Reference ref) {
         addWarning(ref, "There are no authors specified.");
@@ -30,6 +30,11 @@ final class ParserWarnings {
         if (ref.warnings == null)
             ref.warnings = new ArrayList<String>(1);
         ref.warnings.add(warning);
+    }
+
+    public static void removeShortWarnings(Reference ref) {
+        if (ref.warnings != null)
+            ref.warnings.removeIf(x -> x.contains("one name") || x.contains("date"));
     }
 
 }

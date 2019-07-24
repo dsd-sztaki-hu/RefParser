@@ -9,6 +9,8 @@ public class ParsingResult<T> {
 
     public ParsingResult(T result) {
         this.result = result;
+        matchLevel = 0f;
+        ambiguous = false;
     }
 
     public ParsingResult(T result, float matchLevel, boolean ambiguous) {
