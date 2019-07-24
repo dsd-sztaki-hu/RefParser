@@ -1,9 +1,9 @@
-# Ajournalarticle, R. H., Spud, P. T., & Psychologist, R. M. (2016). Title of journal article goes here. Journal of Research in Personality, 22, 236-252. doi:10.1016/0032-026X.56.6.895
-# B’Onlinesourcesareconfusing, S. O. (2010). Search for answers at apastyle.org and include issue numbers after volume numbers when there is no DOI. Journal of Articles Without Digital Object Identifiers, 127 (3), 816-826.
-# Cmagazinearticle, B. E. (2009, July). Note the last names on this page: Each source type has to be formatted in a different way. [Special issue]. Prose Magazine, 126 (5), 96-134.
-# Dbookreference, S. M., Orman, T. P., & Carey, R. (1967). Google scholar’s “cite” feature is usually accurate and time-saving. New York, NY: Pearson.
-# O’encyclopedia, S. E. (1993). Words. In The new encyclopedia Britannica (vol. 38, pp. 745-758). Chicago, IL: Penguin.
-# Pchapter, P. R., & Inaneditedvolume, J. C. (2001). Scientific research papers provide evidence of frustration with giant style manuals. In P. Z. Wildlifeconservation, R. Dawkins, & J. H. Dennett (Eds.), Research papers are hard work but boy are they good for you (pp. 123-256). New York, NY: Simon & Schuster.
+!Ajournalarticle, R. H., Spud, P. T., & Psychologist, R. M. (2016). Title of journal article goes here. Journal of Research in Personality. 22, 236-252. doi:10.1016/0032-026X.56.6.895
+B’Onlinesourcesareconfusing, S. O. (2010). Search for answers at apastyle.org and include issue numbers after volume numbers when there is no DOI. Journal of Articles Without Digital Object Identifiers, 127 (3), 816-826.
+Cmagazinearticle, B. E. (2009, July). Note the last names on this page: Each source type has to be formatted in a different way. [Special issue]. Prose Magazine, 126 (5), 96-134.
+Dbookreference, S. M., Orman, T. P., & Carey, R. (1967). Google scholar’s “cite” feature is usually accurate and time-saving. New York, NY: Pearson.
+O’encyclopedia, S. E. (1993). Words. In The new encyclopedia Britannica (vol. 38, pp. 745-758). Chicago, IL: Penguin.
+Pchapter, P. R., & Inaneditedvolume, J. C. (2001). Scientific research papers provide evidence of frustration with giant style manuals. In P. Z. Wildlifeconservation, R. Dawkins, & J. H. Dennett (Eds.), Research papers are hard work but boy are they good for you (pp. 123-256). New York, NY: Simon & Schuster.
 Qosenberg, Morris. (1994, September 11). This is how you cite an online news article that has an author. The Washington Post. Retrieved from http://www.washingtonpost.com/dir/subdir/2014/05/11/a-d9-11e3_story.html
 Qosenberg, Morris. (1994, September 11). This is how you cite an online news article that has an author. The Washington Post. from http://www.washingtonpost.com/dir/subdir/2014/05/11/a-d9-11e3_story.html
 Qosenberg, Morris. (1994, September 11). This is how you cite an online news article that has an author. Retrieved from http://www.washingtonpost.com/dir/subdir/2014/05/11/a-d9-11e3_story.html

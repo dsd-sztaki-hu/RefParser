@@ -220,7 +220,7 @@ public class Parser {
         if (ref.journalTitle != null)
             result.matchLevel++;
 
-        ref.volume = parseUntilLBr(false);
+        ref.volume = parseUntil(TokenType.LBracket, TokenType.Comma);
         if (ref.volume != null) {
             result.matchLevel++;
             if (peekNext().type == TokenType.LBracket) {
@@ -232,10 +232,8 @@ public class Parser {
                     getNext(); // Get the RBracket.
                     exclusiveMatch = true;
                 }
-            } else {
-                zeroMatch = true;
+            } else
                 ParserWarnings.addWarning(ref, "A journal article must contain an issue number.");
-            }
         } else { // An article ref. must contain two fields in the format 'number(number)''.
             zeroMatch = true;
             ParserWarnings.addWarning(ref, "A journal article must contain a volume number.");
