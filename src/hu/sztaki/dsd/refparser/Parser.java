@@ -216,7 +216,8 @@ public class Parser {
                 result.matchLevel++;
         }
 
-        ref.journalTitle = parseUntilComma(true);
+        ref.journalTitle = parseUntil(TokenType.Comma, TokenType.Dot);
+        getNext();
         if (ref.journalTitle != null)
             result.matchLevel++;
 
