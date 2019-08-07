@@ -17,7 +17,7 @@ public final class RefParser {
         if (args.length > 0)
             loadFile(args[0]);
         else
-            loadFile("tests/apa3.txt");
+            loadFile("tests/articles.txt");
 
         for (String apa : examples) {
             printParsedAPA(apa, ParsingMode.Automatic);
@@ -55,6 +55,16 @@ public final class RefParser {
     /// determined automatically.
     public static Reference parseAPA(String apa) {
         return parseAPA(apa, ParsingMode.Automatic);
+    }
+
+    public static void classificationTest(String apa) {
+        printParsedAPA(apa, ParsingMode.Article);
+        printParsedAPA(apa, ParsingMode.Book);
+        printParsedAPA(apa, ParsingMode.Chapter);
+        printParsedAPA(apa, ParsingMode.Patent);
+        printParsedAPA(apa, ParsingMode.Standard);
+        printParsedAPA(apa, ParsingMode.Theses);
+        printParsedAPA(apa, ParsingMode.Web);
     }
 
     // Loads APA strings into the local field examples.

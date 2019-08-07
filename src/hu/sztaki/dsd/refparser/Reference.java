@@ -9,10 +9,7 @@ import java.util.ArrayList;
 public abstract class Reference {
 
     @SerializedName("match-level")
-    public double matchLevel;
-
-    // @SerializedName("title-ambiguity")
-    // public boolean ambiguity = false;
+    public float matchLevel;
 
     @SerializedName("type")
     public String typeToString() {

@@ -42,14 +42,27 @@ final class HelperFunctions {
         return Character.isWhitespace(ch) || ch == '&' || ch == '.';
     }
 
+    public static void normalizeMatchLevel(Reference ref) {
+        if (ref.matchLevel < 0f)
+            ref.matchLevel = 0f;
+        else if (ref.matchLevel > 1f)
+            ref.matchLevel = 1f;
+    }
+
     /// Converts an ArrayList of strings to a CSLDateStruct.
     /// Only valid formats are accepted.
     public static CSLDateStruct datePartsToCSLDateStruct(ArrayList<String> parts) {
         if (parts.size() == 0) // Invalid input. Consider throwing an exception.
             return null;
 
-        if (parts.contains("-")) { // If the input is a date range.
+        if (parts.stream().anyMatch(t -> t.contains("n") || t.contains("N"))
+                && parts.stream().anyMatch(t -> t.contains("d") || t.contains("D")))
+            return new CSLDateStruct(); // The input is "n. d." (or similar).
+
+        if (parts.contains("-") || parts.contains("/")) { // If the input is a date range.
             int ind = parts.indexOf("-");
+            if (ind < 0)
+                ind = parts.indexOf("/");
             ArrayList<String> startDate = new ArrayList<String>(parts.subList(0, ind));
             ArrayList<String> endDate = new ArrayList<String>(parts.subList(ind + 1, parts.size()));
             CSLDateStruct startStruct = datePartsToCSLDateStruct(startDate);

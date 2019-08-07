@@ -15,4 +15,7 @@ class CSLDateStruct {
         dateParts.add(new ArrayList<Integer>(Arrays.asList(parts)));
     }
 
+    public CSLDateStruct() {
+    }
+
 }

@@ -105,48 +105,43 @@ public class Parser {
     /// first best match.
     public Reference getReference(ParsingMode mode) {
         if (mode == ParsingMode.Automatic) {
-            ArrayList<ParsingResult<Reference>> references = new ArrayList<ParsingResult<Reference>>(7);
+            ArrayList<ParsingResult<Reference>> references1 = new ArrayList<ParsingResult<Reference>>(7);
+            ArrayList<ParsingResult<Reference>> references2 = new ArrayList<ParsingResult<Reference>>(7);
 
             for (int i = 0; i < parserFunctions.size(); i++) { // Iterate through every parser function.
-                references.add(parserFunctions.get(i).apply(false));
+                references1.add(parserFunctions.get(i).apply(false));
+                index = 0; // Go back to the first Token.
 
-                if (references.get(i).matchLevel >= 1f) { // '>= 1f' is Safer than '== 1f'.
-                    if (references.get(i).ambiguous)
-                        ParserWarnings.addWarning(references.get(i).result, ParserWarnings.AMBIGUOUS);
-                    return references.get(i).result; // If we have a perfect match, there's no need for more parsing.
+                if (references1.get(i).result.matchLevel >= 1f) {
+                    if (references1.get(i).ambiguous) // Add a warning for ambiguity.
+                        ParserWarnings.addWarning(references1.get(i).result, ParserWarnings.AMBIGUOUS);
+                    HelperFunctions.normalizeMatchLevel(references1.get(i).result);
+                    return references1.get(i).result; // If we have a perfect match, there's no need for more parsing.
                 }
 
-                if (references.get(i).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
+                if (references1.get(i).ambiguous) // If the parsed reference is ambiguous, parse it strictly...
                 {
+                    ParserWarnings.addWarning(references1.get(i).result, ParserWarnings.AMBIGUOUS);
                     ParsingResult<Reference> strictVersion = parserFunctions.get(i).apply(true);
-                    references.add(strictVersion); // ...and add it to the list.
+                    references2.add(strictVersion); // ...and add it to the list.
+                    index = 0; // Go back to the first Token.
 
-                    if (references.get(i + 1).matchLevel >= 1f)
-                        return references.get(i + 1).result;
-
+                    if (strictVersion.result.matchLevel >= 1f) {
+                        HelperFunctions.normalizeMatchLevel(strictVersion.result);
+                        return strictVersion.result;
+                    }
                 }
             }
 
+            references1.addAll(references2); // Put all References into the first list.
+
             int maxInd = 0; // A maximum search for the best fit.
-            for (int i = 1; i < references.size(); i++) {
-                if (references.get(i).matchLevel > references.get(maxInd).matchLevel)
+            for (int i = 1; i < references1.size(); i++) {
+                if (references1.get(i).result.matchLevel > references1.get(maxInd).result.matchLevel)
                     maxInd = i;
             }
 
-            /*
-             * StringBuilder similars = new StringBuilder(); for (ParsingResult<Reference>
-             * ref : references) { if (ref != references.get(maxInd) && ref.matchLevel ==
-             * references.get(maxInd).matchLevel) similars.append(" " +
-             * ref.result.typeToString()); }
-             * 
-             * if (similars.length() > 0)
-             * ParserWarnings.addWarning(references.get(maxInd).result,
-             * "Multiple type matches (" + similars.toString() + " ).");
-             */
-
-            if (references.get(maxInd).ambiguous)
-                ParserWarnings.addWarning(references.get(maxInd).result, ParserWarnings.AMBIGUOUS);
-            return references.get(maxInd).result; // Unpack the parsed Reference from the ParsingResult object.
+            return references1.get(maxInd).result; // Unpack the parsed Reference from the ParsingResult object.
         } else {
             Function<Boolean, ParsingResult<Reference>> selectedParser = null;
             switch (mode) { // Select the parser function.
@@ -176,9 +171,12 @@ public class Parser {
             if (heuristicResult.ambiguous) {
                 ParserWarnings.addWarning(heuristicResult.result, ParserWarnings.AMBIGUOUS);
                 ParsingResult<Reference> strictVersion = selectedParser.apply(true);
-                if (strictVersion.matchLevel > heuristicResult.matchLevel)
-                    return heuristicResult.result;
+                if (strictVersion.result.matchLevel > heuristicResult.result.matchLevel) {
+                    HelperFunctions.normalizeMatchLevel(strictVersion.result);
+                    return strictVersion.result;
+                }
             }
+            HelperFunctions.normalizeMatchLevel(heuristicResult.result);
             return heuristicResult.result;
         }
     }
@@ -191,7 +189,7 @@ public class Parser {
         boolean exclusiveMatch = false; // True if the input MUST be an article reference.
         boolean shortArticle = false; // True if the input is a short article reference.
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         if (!strict && ref.authors.get(0).isOnlyOneNamePart()) { // isOnlyOneNamePart() implies that size() == 1.
             index = 0; // Go back to the first Token.
@@ -203,27 +201,27 @@ public class Parser {
 
             ref.title = HelperFunctions.withoutDot(parseUntilLBr(false));
             if (ref.title != null)
-                result.matchLevel++;
+                ref.matchLevel++;
 
             ref.date = parseDate();
             if (ref.date != null)
-                result.matchLevel++;
+                ref.matchLevel++;
         } else {
             ParsingResult<String> title = parseTitle(strict);
             ref.title = title.result;
             result.ambiguous = title.ambiguous; // The result is ambiguous if the title is ambiguous.
             if (ref.title != null)
-                result.matchLevel++;
+                ref.matchLevel++;
         }
 
         ref.journalTitle = parseUntil(TokenType.Comma, TokenType.Dot);
-        getNext();
+        getNext(); // Get the next comma or dot.
         if (ref.journalTitle != null)
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ref.volume = parseUntil(TokenType.LBracket, TokenType.Comma);
         if (ref.volume != null) {
-            result.matchLevel++;
+            ref.matchLevel++;
             if (peekNext().type == TokenType.LBracket) {
                 getNext();
                 ref.issue = parseUntil(TokenType.RBracket);
@@ -234,7 +232,7 @@ public class Parser {
                     exclusiveMatch = true;
                 }
             } else
-                ParserWarnings.addWarning(ref, "A journal article must contain an issue number.");
+                ParserWarnings.addWarning(ref, "A journal article should contain an issue number.");
         } else { // An article ref. must contain two fields in the format 'number(number)''.
             zeroMatch = true;
             ParserWarnings.addWarning(ref, "A journal article must contain a volume number.");
@@ -245,7 +243,7 @@ public class Parser {
 
         ref.pageRange = parsePageRange();
         if (ref.pageRange != null)
-            result.matchLevel++;
+            ref.matchLevel++;
         else {
             zeroMatch = true;
             ParserWarnings.addWarning(ref, "A journal article must contain a page range.");
@@ -255,25 +253,23 @@ public class Parser {
 
         ref.DOI = parseDOI(ref);
         if (ref.DOI != null)
-            result.matchLevel++;
+            ref.matchLevel++;
         ref.URL = parseRetrievedFrom();
         if (ref.URL != null && ref.DOI == null)
-            result.matchLevel++; // If both URL and DOI is present that's one point.
+            ref.matchLevel++; // If both URL and DOI is present that's one point.
 
         parseRemainderWithWarning(ref); // If there are remaining tokens, register them.
 
-        if (shortArticle)
-            result.matchLevel /= 5f;
+        if (shortArticle) // A short article (without authors) contains less fields.
+            ref.matchLevel /= 5f;
         else
-            result.matchLevel /= 7f;
+            ref.matchLevel /= 7f;
 
         if (exclusiveMatch)
-            result.matchLevel = 1f;
+            ref.matchLevel = 2f;
         else if (zeroMatch)
-            result.matchLevel = -1f;
+            ref.matchLevel = -1f;
 
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
         return result;
     }
 
@@ -281,13 +277,13 @@ public class Parser {
     private ParsingResult<Reference> getReferenceBook(boolean strict) {
         BookReference ref = new BookReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
-        result.matchLevel = 0f;
+        ref.matchLevel = 0f;
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ref.title = parseUntil(TokenType.LBracket, TokenType.Dot);
         if (ref.title != null)
-            result.matchLevel++;
+            ref.matchLevel++;
 
         if (peekNext().type == TokenType.LBracket) { // title (edition)
             getNext();
@@ -299,13 +295,13 @@ public class Parser {
 
         ref.URL = parseRetrievedFrom();
         if (ref.URL != null) // No publisher or place, just a URL; probably an e-book.
-            result.matchLevel /= 3f;
+            ref.matchLevel /= 3f;
         else {
             ref.publisherPlace = parseUntil(TokenType.Colon, TokenType.Dot);
             if (ref.publisherPlace == null)
                 ParserWarnings.addWarning(ref, "The publisher's place is not defined.");
             else
-                result.matchLevel++;
+                ref.matchLevel++;
 
             if (getNext().type == TokenType.Colon) { // place: publisher
                 getNext();
@@ -313,20 +309,18 @@ public class Parser {
                 if (ref.publisherPlace == null)
                     ParserWarnings.addWarning(ref, "There's no publisher defined.");
                 else
-                    result.matchLevel++;
+                    ref.matchLevel++;
                 ignoreDot();
             } else if (getNext().type == TokenType.Dot)
                 getNext();
 
             ref.DOI = parseDOI(ref);
             ref.URL = parseRetrievedFrom();
-            result.matchLevel /= 5f;
+            ref.matchLevel /= 5f;
         }
 
         parseRemainderWithWarning(ref);
 
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
         return result;
     }
 
@@ -335,11 +329,11 @@ public class Parser {
         ChapterReference ref = new ChapterReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ref.date = parseDate();
         if (ref.date != null)
-            result.matchLevel++;
+            ref.matchLevel++;
         else
             ParserWarnings.addDateWarning(ref);
 
@@ -347,14 +341,14 @@ public class Parser {
         ref.title = title.result;
         result.ambiguous = title.ambiguous; // The result is ambiguous if the title is ambiguous.
         if (ref.title != null && !ref.title.isEmpty())
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ignoreSpace();
         if (peekNext().lexeme.equalsIgnoreCase("In")) {
             getNext();
             ref.bookTitle = parseUntilDot(true);
             if (ref.bookTitle != null)
-                result.matchLevel++;
+                ref.matchLevel++;
         }
 
         if (canRead()) { // If there are remaining tokens, register them.
@@ -362,9 +356,7 @@ public class Parser {
             ParserWarnings.addRemainderWarning(ref);
         }
 
-        result.matchLevel /= 4f; // TODO
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
+        ref.matchLevel /= 4f; // TODO
         return result;
     }
 
@@ -373,15 +365,15 @@ public class Parser {
         WebReference ref = new WebReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
         boolean zeroMatch = false; // True if the input cannot be a web reference.
-        result.matchLevel = 0f;
+        ref.matchLevel = 0f;
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ParsingResult<String> title = parseTitle(strict);
         ref.title = title.result;
         result.ambiguous = title.ambiguous; // The result is ambiguous if the title is ambiguous.
         if (ref.title != null && !ref.title.isEmpty())
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ignoreSpace();
         ref.URL = parseRetrievedFrom();
@@ -389,16 +381,17 @@ public class Parser {
             ParserWarnings.addWarning(ref, ParserWarnings.URL_MISSING);
             zeroMatch = true;
         } else
-            result.matchLevel++;
+            ref.matchLevel++;
 
         if (canRead()) { // If there are remaining tokens, register them.
             ref.restOfAPA = parseUntilEnd();
             ParserWarnings.addRemainderWarning(ref);
         }
 
-        result.matchLevel /= 4f;
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = zeroMatch ? 0f : result.matchLevel;
+        if (zeroMatch)
+            ref.matchLevel = -1f;
+        else
+            ref.matchLevel /= 4f;
         return result;
     }
 
@@ -406,16 +399,16 @@ public class Parser {
     private ParsingResult<Reference> getReferencePatent(boolean strict) {
         PatentReference ref = new PatentReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
-        result.matchLevel = 0f;
+        ref.matchLevel = 0f;
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ignoreSpace();
         ref.patentNumber = parsePatentNumber();
         if (ref.patentNumber == null)
-            result.matchLevel = 0f; // The next field MUST be the patent number.
+            ref.matchLevel = 0f; // The next field MUST be the patent number.
         else
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ignoreSpace();
         ref.URL = parseRetrievedFrom(); // optional
@@ -423,9 +416,7 @@ public class Parser {
         ignoreSpace();
         ref.publisherPlace = HelperFunctions.withoutDot(parseUntilEnd()); // optional
 
-        result.matchLevel /= 3f;
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = result.matchLevel;
+        ref.matchLevel /= 3f;
         return result;
     }
 
@@ -434,20 +425,20 @@ public class Parser {
         StandardReference ref = new StandardReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
         boolean zeroMatch = false; // True if the input cannot be a standard reference.
-        result.matchLevel = 0f;
+        ref.matchLevel = 0f;
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.AtLeastOne);
 
         ref.title = parseUntilLBr(false);
         if (ref.title != null && !ref.title.isEmpty())
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ref.standardNumber = parseStandardNumber();
         if (ref.standardNumber == null) {
             ParserWarnings.addWarning(ref, "A standard number must be specified.");
             zeroMatch = true;
         } else
-            result.matchLevel++;
+            ref.matchLevel++;
 
         ignoreSpace();
         ref.URL = parseRetrievedFrom();
@@ -455,18 +446,19 @@ public class Parser {
             ignoreSpace();
             ref.publisher = HelperFunctions.withoutDot(parseUntilEnd());
             if (ref.publisher != null)
-                result.matchLevel++;
+                ref.matchLevel++;
         } else
-            result.matchLevel++;
+            ref.matchLevel++;
 
         if (canRead()) { // If there are remaining tokens, register them.
             ref.restOfAPA = parseUntilEnd();
             ParserWarnings.addRemainderWarning(ref);
         }
 
-        result.matchLevel /= 5f;
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = zeroMatch ? -1f : result.matchLevel;
+        if (zeroMatch)
+            ref.matchLevel = -1f;
+        else
+            ref.matchLevel /= 5f;
         return result;
     }
 
@@ -475,15 +467,15 @@ public class Parser {
         ThesisReference ref = new ThesisReference();
         ParsingResult<Reference> result = new ParsingResult<Reference>(ref);
         boolean zeroMatch = false; // True if the input cannot be a theses reference.
-        result.matchLevel = 0f;
+        ref.matchLevel = 0f;
 
-        result.matchLevel = parsePrefixInto(ref, AuthorsMode.JustOne);
+        ref.matchLevel = parsePrefixInto(ref, AuthorsMode.JustOne);
         if (ref.authors != null && ref.authors.size() > 1)
             zeroMatch = true;
 
         ref.title = parseUntilLBr(false);
         if (ref.title != null && !ref.title.isEmpty())
-            result.matchLevel++;
+            ref.matchLevel++;
 
         if (peekNext().type != TokenType.LBracket) { // Missing genre.
             zeroMatch = true;
@@ -512,18 +504,18 @@ public class Parser {
 
                 ref.publisherPlace = HelperFunctions.withoutDot(parseUntilEnd());
                 if (ref.publisherPlace != null)
-                    result.matchLevel++;
+                    ref.matchLevel++;
                 else
                     ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHING_PLACE_MISSING);
 
-                result.matchLevel /= 4f; // There are 4 key fields on this path.
+                ref.matchLevel /= 4f; // There are 4 key fields on this path.
             } else if (peekNext().type == TokenType.Comma) { // (genre, *) Retrieved from URL
                 ref.genre = next;
                 getNext();
 
                 ref.publisher = parseUntil(TokenType.RBracket, TokenType.Comma);
                 if (ref.publisher != null)
-                    result.matchLevel++;
+                    ref.matchLevel++;
                 else
                     ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHER_MISSING);
 
@@ -532,7 +524,7 @@ public class Parser {
 
                     ref.publisherPlace = parseUntil(TokenType.RBracket);
                     if (ref.publisherPlace != null)
-                        result.matchLevel++;
+                        ref.matchLevel++;
                     else
                         ParserWarnings.addWarning(ref, ParserWarnings.PUBLISHING_PLACE_MISSING);
 
@@ -546,19 +538,19 @@ public class Parser {
                 ignoreDot();
                 ref.URL = parseRetrievedFrom();
                 if (ref.URL != null)
-                    result.matchLevel++;
+                    ref.matchLevel++;
                 else
                     ParserWarnings.addWarning(ref, ParserWarnings.URL_MISSING);
 
-                result.matchLevel /= 6f; // There are 6 key fields on this path.
+                ref.matchLevel /= 6f; // There are 6 key fields on this path.
             } else // error
                 parseRemainderWithWarning(ref);
         }
 
         parseRemainderWithWarning(ref);
 
-        index = 0; // Go back to the first Token.
-        ref.matchLevel = zeroMatch ? -1f : result.matchLevel;
+        if (zeroMatch)
+            ref.matchLevel = -1f;
         return result;
     }
     // endregion
@@ -602,9 +594,13 @@ public class Parser {
         }
 
         ref.date = parseDate();
-        if (ref.date != null)
+        if (ref.date != null) {
             matchLevel++;
-        else
+            if (ref.date.dateParts.size() == 0) {
+                ref.date = null;
+                ParserWarnings.addWarning(ref, "The publication date is not specified (n.d.).");
+            }
+        } else
             ParserWarnings.addDateWarning(ref);
 
         return matchLevel;
@@ -677,7 +673,7 @@ public class Parser {
             sb.append(next.lexeme);
         }
 
-        return new ParsingResult<String>(sb.toString().trim(), 0f, ambiguity); // The second parameter is meaningless.
+        return new ParsingResult<String>(sb.toString().trim(), ambiguity); // The second parameter is meaningless.
     }
 
     private boolean isTitleTerminator(TokenType token) {
@@ -799,8 +795,10 @@ public class Parser {
             if (next != null)
                 serialized.add(next);
             if (peekNext().type != TokenType.RBracket) {
-                if (getNext().type == TokenType.Hyphen)
-                    serialized.add("-");
+                if (peekNext().type == TokenType.Hyphen || peekNext().type == TokenType.Slash)
+                    serialized.add(getNext().lexeme);
+                else
+                    getNext();
             }
         }
         if (canRead()) // If the input is correct, read the next RBracket.
@@ -870,7 +868,7 @@ public class Parser {
     /// Calls parseUntil with Comma and RBracket.
     private String parseUntilDateDelimiter() {
         String result = parseUntil(Token.TokenType.Comma, Token.TokenType.RBracket, Token.TokenType.Hyphen,
-                Token.TokenType.WhSpace);
+                Token.TokenType.WhSpace, TokenType.Slash);
         return result;
     }
 
