@@ -10,11 +10,13 @@ The software can be used either as a library or a command line application. It c
 As a command line app, it must have one argument that is a .txt file format with the APA style references one-per-line. If a line in this file starts with a hashmark (#), it is ignored. If a line starts with an exclamation mark (!), the previous lines are discarded. Empty lines are ignored too. The parsing mode is *Automatic*.
 
 As a library, the *RefParser* class is used. It's a static class that can work in multiple ways. As a static class it holds a number of lines from the specified .txt file, loaded the following way:
-> RefParser.loadFile("path to file")
-> RefParser.parseAndPrint()
+
+    RefParser.loadFile("path to file")
+    RefParser.parseAndPrint()
 
 ...or it can be used directly on a string containing an APA reference. The second argument can be omitted to set the parsing mode to *Automatic*. If returns a *Reference* object.
-> RefParser.parseAPA("an APA style citation of an article", ParsingMode.Article)
+    
+    RefParser.parseAPA("an APA style citation of an article", ParsingMode.Article)
 
 To get a serialized JSON string, use *parseAPAtoCSL()* with the same parameters (the second arg. is non-optional). Use *printParsedAPA()* with the same args to print the result to *System.out*. There's no return value in this case.
 
@@ -32,7 +34,9 @@ To parse strings, the code contains a custom recursive descent parser in *Parser
 | /target | The compiled code |
 | /tests | Textfiles containing examples (both correct and incorrect) for semi-automatic testing |
 
-| Files within /src/hu/sztaki/dsd/refparser | |
+### Files within /src/hu/sztaki/dsd/refparser
+
+| File | Description |
 | - | - |
 | CSLAuthorStruct.java | Defines *CSLAuthorStruct*, which is a JSON-serializable class to represent an author in a *Reference* object. |
 | CSLDateStruct.java | Defines *CSLDateStruct*, which is a JSON-serializable class to represent a date object in a *Reference* object. |
