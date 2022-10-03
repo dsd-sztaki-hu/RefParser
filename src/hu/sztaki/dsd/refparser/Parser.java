@@ -52,8 +52,7 @@ public class Parser {
     }
 
     /// Returns the next N non-whitespace Tokens from the input without advancing
-    /// the
-    /// index. It seriously violates the LL(1) principles.
+    /// the index. It seriously violates the LL(1) principles.
     private ArrayList<Token> peekAhead(int count) {
         ArrayList<Token> tokens = new ArrayList<Token>(count);
         int prevIndex = index, i = 0;
@@ -160,7 +159,7 @@ public class Parser {
             case Standard:
                 selectedParser = parserFunctions.get(4);
                 break;
-            case Theses:
+            case Thesis:
                 selectedParser = parserFunctions.get(5);
                 break;
             default: // Only Web is possible at this point.

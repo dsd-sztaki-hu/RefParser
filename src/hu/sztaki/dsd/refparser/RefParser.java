@@ -16,9 +16,16 @@ public final class RefParser {
     public static void main(String[] args) throws Exception {
         if (args.length > 0)
             loadFile(args[0]);
-        else
-            loadFile("tests/articles.txt");
+        else {
+            System.out.println("There's no input specified.");
+            System.exit(-1);
+        }
 
+        parseAndPrint();
+    }
+
+    /// Prints the parsed results from *examples* to *System.out*.
+    public static void parseAndPrint() {
         for (String apa : examples) {
             printParsedAPA(apa, ParsingMode.Automatic);
             System.out.println();
@@ -57,26 +64,26 @@ public final class RefParser {
         return parseAPA(apa, ParsingMode.Automatic);
     }
 
-    public static void classificationTest(String apa) {
+    public static void classificationTest(String apa) { // used for testing only
         printParsedAPA(apa, ParsingMode.Article);
         printParsedAPA(apa, ParsingMode.Book);
         printParsedAPA(apa, ParsingMode.Chapter);
         printParsedAPA(apa, ParsingMode.Patent);
         printParsedAPA(apa, ParsingMode.Standard);
-        printParsedAPA(apa, ParsingMode.Theses);
+        printParsedAPA(apa, ParsingMode.Thesis);
         printParsedAPA(apa, ParsingMode.Web);
     }
 
     // Loads APA strings into the local field examples.
     // If a line starts with a hashtag, it is ignored.
-    // If a line starts with an excl. mark, all the other lines are ignored.
+    // If a line starts with an excl. mark, all the other lines before it are ignored.
     public static void loadFile(String path) throws IOException {
         examples.clear();
         FileReader stream = new FileReader(path); // Charset.forName("utf8")
         Scanner scanner = new Scanner(stream);
         while (scanner.hasNextLine()) {
             String nextLine = scanner.nextLine();
-            if (nextLine.startsWith("#"))
+            if (nextLine.startsWith("#") || nextLine.length() == 0)
                 continue;
             else if (nextLine.startsWith("!")) {
                 examples.clear();

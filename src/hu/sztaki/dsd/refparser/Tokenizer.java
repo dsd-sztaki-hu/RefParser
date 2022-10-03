@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 /// Converts an APA reference into an ArrayList of Tokens.
 public class Tokenizer {
 
-    private  ArrayList<Pair> Regexes = new ArrayList<Pair>();
+    private ArrayList<Pair> Regexes = new ArrayList<Pair>();
     private String text;
 
     public Tokenizer(String text) {
